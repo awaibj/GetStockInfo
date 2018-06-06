@@ -4,7 +4,7 @@ import tushare as ts
 import pandas as pd
 
 BasicInfoName='BasicInfo.csv'
-HistDataName='HistData.csv'
+HistDataName='HistData2.csv'
 StartDate='2018-01-01'
 EndDate='2018-06-03'
 
