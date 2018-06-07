@@ -34,13 +34,22 @@ class MySQLTool:
 		except pymysql.Error as e:
 			print(e.args[0])
 
+	def GetNearDate(self,TableName):
+		try:
+			sql = "select date from %s order by date desc" % (TableName)
+			# print sql
+			self.cur.execute(sql)
+			return self.cur.fetchone()
+		except pymysql.Error as e:
+			print(e)
+
 	# insert
 	def Insert(self, TableName, tuple):
 		try:
 			sql = "INSERT INTO %s VALUES %s" % (TableName,tuple)
 			# print sql
 			self.cur.execute(sql)
-			self.db.commit()
+			# self.db.commit()
 		except pymysql.Error as e:
 			print(e)
 
