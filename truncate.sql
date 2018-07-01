@@ -1,1 +1,0 @@
-truncate table tb_market_data;

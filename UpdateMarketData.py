@@ -4,9 +4,28 @@ from MySQLTool import MySQLTool
 import pandas as pd
 import datetime
 import tushare as ts
+import logging
 
-def DownloadFile(StartDate,EndDate,FileName):
-    BasicInfoName = 'BasicInfo.csv'
+def ConfigLogger(LogFileName):
+	logger = logging.getLogger()
+	logger.setLevel(logging.DEBUG)
+	# file handle
+	fh = logging.FileHandler(LogFileName,mode='w')
+	fh.setLevel(logging.DEBUG)
+	formatter = logging.Formatter("%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s")
+	fh.setFormatter(formatter)
+	logger.addHandler(fh)
+	# console
+	ch = logging.StreamHandler()
+	# ch.setLevel(logging.WARNING)
+	ch.setLevel(logging.INFO)
+	ch.setFormatter(formatter)
+	logger.addHandler(ch)
+	return logger
+
+def DownloadFile(StartDate,EndDate,FileName,logger):
+    logger.info('get market data from tushare.')
+    BasicInfoName = './csv/BasicInfo.csv'
     fp = open(BasicInfoName, mode='r')
     line = fp.readline()
     line = fp.readline()
@@ -14,6 +33,7 @@ def DownloadFile(StartDate,EndDate,FileName):
     # for code in BasicDf['code']:
     df = pd.DataFrame()
     while code != '':
+        logger.debug('process %s data.' % code)
         df1 = ts.get_hist_data(code, StartDate, EndDate)
         # 300750 is None
         if isinstance(df1, pd.DataFrame):  # df1 != None:
@@ -28,35 +48,35 @@ def DownloadFile(StartDate,EndDate,FileName):
             df = df.append(df1)
         line = fp.readline()
         code = line.split(',')[0]
-        print code
     # save to file
     df.to_csv(FileName, encoding='gbk')
+    logger.info('save to file ok.')
 
-def FileToDB(FileName,TableName):
-    MySQLDB = MySQLTool()
+def FileToDB(FileName,TableName,logger):
+    logger.info('write market data to mysql database.')
+    MySQLDB = MySQLTool(logger)
     fp=open(FileName,mode='r')
     line=fp.readline()
     line=fp.readline()
     PreCode=line.split(',')[1]
-    d1=datetime.datetime.today()
-    d1=d1.strftime('%Y-%m-%d %H:%M:%S')
-    print '[%s] %s' % (d1,PreCode)
+    logger.debug('process %s data.' % PreCode)
     count=0
     while line != '':
         count = count+1
+        # date	code	open	high	close	low	volume	price_change
+        # 	p_change	ma5	ma10	ma20	v_ma5	v_ma10	v_ma20
         DataList=line.split(',')
         # print DataList[0],DataList[1]
         if DataList[1] != PreCode:
             PreCode=DataList[1]
-            d1=datetime.datetime.today()
-            d1 = d1.strftime('%Y-%m-%d %H:%M:%S')
-            print '[%s] %s' % (d1, PreCode)
-        MySQLDB.Insert(TableName,tuple(DataList))
+            logger.debug('process %s data.' % PreCode)
+        MySQLDB.Insert(TableName,tuple(DataList),logger)
         if count % 100 == 0:
             MySQLDB.Commit()
         line = fp.readline()
     MySQLDB.Commit()
     MySQLDB.CloseConn()
+    logger.info('save to database ok.')
 
 if __name__=='__main__':
     #download history data
@@ -69,17 +89,21 @@ if __name__=='__main__':
     # TableName = 'tb_market_data'
     # FileToDB(HistDataName,TableName)
 
+    # init logger
+    strDate = datetime.datetime.today().strftime('%Y%m%d')
+    LogFileName = './log/market_' + strDate + '.log'
+    logger = ConfigLogger(LogFileName)
     #download every day data
-    MySQLDB = MySQLTool()
+    MySQLDB = MySQLTool(logger)
     TableName = 'tb_market_data'
-    PreDate = MySQLDB.GetNearDate(TableName)
+    PreDate = MySQLDB.GetNearDate(TableName,logger)
     MySQLDB.CloseConn()
     date1 = PreDate[0] + datetime.timedelta(days=1)
     StartDate = date1.strftime('%Y-%m-%d')
     date2 = datetime.datetime.today()
     EndDate = date2.strftime('%Y-%m-%d')
-    FileName='new.csv'
-    DownloadFile(StartDate, EndDate, FileName)
+    FileName='./csv/new.csv'
+    DownloadFile(StartDate, EndDate, FileName,logger)
     # write file to database
-    FileToDB(FileName,TableName)
+    FileToDB(FileName,TableName,logger)
 

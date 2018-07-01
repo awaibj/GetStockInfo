@@ -1,0 +1,1 @@
+truncate table tb_hsgt_data;
