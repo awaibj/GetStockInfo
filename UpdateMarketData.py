@@ -36,7 +36,8 @@ def DownloadFile(StartDate,EndDate,FileName,logger):
         logger.debug('process %s data.' % code)
         df1 = ts.get_hist_data(code, StartDate, EndDate)
         # 300750 is None
-        if isinstance(df1, pd.DataFrame):  # df1 != None:
+        # if isinstance(df1, pd.DataFrame):
+        if len(df1) > 0:
             data2 = [code for i in range(df1.shape[0])]
             df1['code'] = data2
             list1 = df1.columns
@@ -49,8 +50,13 @@ def DownloadFile(StartDate,EndDate,FileName,logger):
         line = fp.readline()
         code = line.split(',')[0]
     # save to file
-    df.to_csv(FileName, encoding='gbk')
-    logger.info('save to file ok.')
+    if len(df) > 0:
+        df.to_csv(FileName, encoding='gbk')
+        logger.info('save to file ok.')
+        return True
+    else:
+        logger.info('no data update, file is empty.')
+        return False
 
 def FileToDB(FileName,TableName,logger):
     logger.info('write market data to mysql database.')
@@ -103,7 +109,8 @@ if __name__=='__main__':
     date2 = datetime.datetime.today()
     EndDate = date2.strftime('%Y-%m-%d')
     FileName='./csv/new.csv'
-    DownloadFile(StartDate, EndDate, FileName,logger)
+    flag = DownloadFile(StartDate, EndDate, FileName,logger)
     # write file to database
-    FileToDB(FileName,TableName,logger)
+    if flag:
+        FileToDB(FileName,TableName,logger)
 
