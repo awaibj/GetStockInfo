@@ -109,8 +109,11 @@ if __name__=='__main__':
     date2 = datetime.datetime.today()
     EndDate = date2.strftime('%Y-%m-%d')
     FileName='./csv/new.csv'
-    flag = DownloadFile(StartDate, EndDate, FileName,logger)
-    # write file to database
-    if flag:
-        FileToDB(FileName,TableName,logger)
+    if StartDate < EndDate:
+        flag = DownloadFile(StartDate, EndDate, FileName,logger)
+        # write file to database
+        if flag:
+            FileToDB(FileName,TableName,logger)
+    else:
+        logger.info('No update, StartDate=%s, EndDate=%s.' % (StartDate,EndDate))
 
