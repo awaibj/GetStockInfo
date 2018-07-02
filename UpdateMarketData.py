@@ -24,7 +24,7 @@ def ConfigLogger(LogFileName):
 	return logger
 
 def DownloadFile(StartDate,EndDate,FileName,logger):
-    logger.info('get market data from tushare.')
+    logger.info('get market data from tushare between %s and %s.' % (StartDate,EndDate))
     BasicInfoName = './csv/BasicInfo.csv'
     fp = open(BasicInfoName, mode='r')
     line = fp.readline()
